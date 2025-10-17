@@ -1,0 +1,186 @@
+# NetGuardian Memory Bank Configuration
+
+# Enable memory bank for this project
+memory_bank: true
+
+# Project-specific context and knowledge
+project_info:
+  name: "NetGuardian"
+  description: "Network security monitoring system combining Snort3 and Zeek"
+  version: "0.1.0"
+  language: "C++17"
+  platform: "Linux only"
+  build_system: "CMake 3.15+"
+
+# Key architectural decisions
+architecture:
+  - "Dual-engine: Snort3 for fast detection + Zeek for deep analysis"
+  - "Bridge layer for inter-engine communication via event bus"
+  - "Modular design: core, utils, bridge, snort, zeek modules"
+  - "Thread-safe packet processing pipeline"
+  - "Zero-copy optimization where possible"
+
+# Module responsibilities
+modules:
+  core:
+    - "Packet capture and basic processing"
+    - "Flow and session tracking"
+    - "Configuration management"
+    - "Logging infrastructure"
+
+  snort:
+    - "Pattern matching and rule evaluation"
+    - "Protocol decoding (from Snort3)"
+    - "Real-time intrusion detection"
+    - "Alert generation"
+
+  zeek:
+    - "Deep protocol analysis (HTTP, DNS, SSL, etc.)"
+    - "Metadata extraction and logging"
+    - "Behavioral analysis capabilities"
+    - "Structured log output"
+
+  bridge:
+    - "Event bus for inter-module communication"
+    - "Data format conversion between Snort/Zeek"
+    - "Plugin management"
+    - "Protocol mapping"
+
+# Code organization principles
+coding_standards:
+  - "C++17 standard, no C++20/23 features"
+  - "Follow Google C++ Style Guide baseline"
+  - "snake_case for variables/functions, PascalCase for classes"
+  - "4 spaces indentation, 100 char line limit"
+  - "All public APIs must have Doxygen comments"
+  - "Memory management: Use RAII, smart pointers, memory pools"
+
+# File naming conventions
+file_conventions:
+  headers: "include/<module>/<name>.h"
+  sources: "src/<module>/<name>.cpp"
+  tests: "tests/unit/test_<name>.cpp"
+  examples: "examples/<name>.cpp"
+
+# Build configurations
+build_options:
+  - "ENABLE_SNORT_INTEGRATION: Enable Snort3 features"
+  - "ENABLE_ZEEK_INTEGRATION: Enable Zeek features"
+  - "BUILD_TESTS: Build test suite"
+  - "ENABLE_SANITIZERS: Enable address/UB sanitizers"
+
+# Dependencies
+dependencies:
+  required:
+    - "libpcap: Packet capture"
+    - "Threads: Multi-threading support"
+  optional:
+    - "DAQ: Advanced packet I/O (from Snort)"
+    - "GoogleTest: Testing framework (auto-download)"
+    - "Google Benchmark: Performance testing (auto-download)"
+
+# License compliance
+license:
+  project: "GPL v2"
+  reason: "Inherits from Snort3 GPL v2 (most restrictive)"
+  snort3: "GPL v2"
+  zeek: "BSD License"
+  requirements:
+    - "Preserve copyright notices from both projects"
+    - "Include GPL v2 LICENSE file"
+    - "Add copyright headers to all new files"
+
+# Development workflow
+workflow:
+  - "Feature branches from develop"
+  - "Pull requests require code review"
+  - "All tests must pass before merge"
+  - "Code must be formatted with clang-format"
+
+# Performance targets
+performance:
+  throughput: "10 Gbps on 8-core system"
+  latency: "<1ms for fast path (Snort only)"
+  memory: "<2GB for 100K active flows"
+  scalability: "Linear scaling up to 16 cores"
+
+# Testing strategy
+testing:
+  unit: "Test individual functions and classes"
+  integration: "Test Snort-Zeek bridge interaction"
+  performance: "Benchmark critical paths"
+  coverage: "Target >80% code coverage"
+
+# Current implementation status
+status:
+  framework: "COMPLETE"
+  packet_capture: "TODO"
+  protocol_decoders: "TODO"
+  flow_tracking: "SKELETON"
+  snort_integration: "SKELETON"
+  zeek_integration: "SKELETON"
+  bridge_layer: "SKELETON"
+  testing: "FRAMEWORK_ONLY"
+
+# Next development priorities
+priorities:
+  1: "Implement libpcap packet capture"
+  2: "Add basic protocol decoders (Ethernet, IP, TCP, UDP)"
+  3: "Implement flow tracking logic"
+  4: "Port Snort3 rule parser"
+  5: "Port Zeek HTTP analyzer"
+
+# Common patterns and idioms
+patterns:
+  packet_handling: "Use memory pools to avoid malloc/free in hot path"
+  threading: "One thread per interface + worker threads for processing"
+  logging: "Use structured logging (JSON) for easy SIEM integration"
+  error_handling: "Return error codes, log errors, avoid exceptions in hot path"
+
+# Useful commands
+commands:
+  build: "./scripts/build/build.sh"
+  test: "cd build && ctest --output-on-failure"
+  format: "find src include -name '*.cpp' -o -name '*.h' | xargs clang-format -i"
+  clean: "rm -rf build"
+
+# Integration points with Snort3
+snort_integration:
+  source_dirs:
+    - "../snort3/src/detection/"
+    - "../snort3/src/flow/"
+    - "../snort3/src/codecs/"
+    - "../snort3/src/packet_io/"
+  key_files:
+    - "detection_engine.cc: Pattern matching engine"
+    - "fp_detect.cc: Fast pattern detection"
+    - "flow_cache.cc: Flow management"
+    - "sfdaq.cc: DAQ integration"
+
+# Integration points with Zeek
+zeek_integration:
+  source_dirs:
+    - "../zeek/src/analyzer/protocol/"
+    - "../zeek/src/packet_analysis/"
+    - "../zeek/src/logging/"
+  key_files:
+    - "analyzer/protocol/http/: HTTP analyzer"
+    - "analyzer/protocol/dns/: DNS analyzer"
+    - "analyzer/protocol/ssl/: SSL/TLS analyzer"
+    - "logging/WriterBackend.cc: Log writers"
+
+# Known issues and limitations
+limitations:
+  - "Framework only - no functional implementation yet"
+  - "Placeholder files need actual implementation"
+  - "Tests exist but have no test cases"
+  - "Linux-only, no Windows/macOS support planned"
+
+# Documentation locations
+docs:
+  user: "docs/user/README.md"
+  developer: "docs/developer/README.md"
+  api: "docs/api/README.md"
+  quickstart: "QUICKSTART.md"
+  overview: "PROJECT_OVERVIEW.md"
+  contributing: "CONTRIBUTING.md"

@@ -1,0 +1,159 @@
+# NetGuardian Configuration File
+# Version: 0.1.0
+
+# ============================================================================
+# General Settings
+# ============================================================================
+[general]
+# Network interfaces to monitor (comma-separated)
+interfaces = eth0
+
+# Number of processing threads (0 = auto-detect)
+threads = 0
+
+# Packet buffer size (MB)
+buffer_size = 256
+
+# Enable/disable promiscuous mode
+promiscuous = true
+
+# ============================================================================
+# Snort Integration Settings
+# ============================================================================
+[snort]
+# Enable Snort detection engine
+enabled = true
+
+# Path to Snort rules directory
+rules_path = /etc/netguardian/rules/snort/
+
+# Pattern matching algorithm: ac-bnfa, ac-full, ac-sparse
+fast_pattern_engine = ac-bnfa
+
+# Maximum pattern match queue
+max_queue_size = 1000
+
+# Enable protocol decoders
+decode_ethernet = true
+decode_ipv4 = true
+decode_ipv6 = true
+decode_tcp = true
+decode_udp = true
+decode_icmp = true
+
+# ============================================================================
+# Zeek Integration Settings
+# ============================================================================
+[zeek]
+# Enable Zeek protocol analyzers
+enabled = true
+
+# Protocol analyzers to load
+analyzers = http,dns,ssl,ssh,smtp,ftp
+
+# Zeek script path
+scripts_path = /etc/netguardian/scripts/zeek/
+
+# Log rotation settings
+log_rotation_interval = 3600  # seconds
+log_rotation_size = 100       # MB
+
+# Connection timeout (seconds)
+connection_timeout = 300
+
+# ============================================================================
+# Flow Management
+# ============================================================================
+[flow]
+# Flow table size
+max_flows = 100000
+
+# Flow timeout for TCP (seconds)
+tcp_timeout = 300
+
+# Flow timeout for UDP (seconds)
+udp_timeout = 60
+
+# Flow timeout for other protocols (seconds)
+other_timeout = 30
+
+# Memory reclaim interval (seconds)
+cleanup_interval = 30
+
+# ============================================================================
+# Output Settings
+# ============================================================================
+[output]
+# Base directory for all outputs
+base_path = /var/log/netguardian/
+
+# Alert output
+[output.alerts]
+# Alert types: syslog, file, json, unified2
+types = file,json
+
+# Syslog facility (if syslog enabled)
+syslog_facility = local0
+
+# Alert file path
+file_path = /var/log/netguardian/alerts.log
+
+# JSON alert path
+json_path = /var/log/netguardian/alerts.json
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+[logging]
+# Log level: debug, info, warning, error, critical
+level = info
+
+# Log output: console, file, both
+output = both
+
+# Log file path
+file_path = /var/log/netguardian/netguardian.log
+
+# Enable timestamps
+timestamp = true
+
+# Log format: text, json
+format = text
+
+# ============================================================================
+# Performance Tuning
+# ============================================================================
+[performance]
+# Enable packet zero-copy
+zero_copy = true
+
+# Enable hardware offload (if supported)
+hw_offload = true
+
+# CPU affinity (comma-separated core IDs, empty for auto)
+cpu_affinity =
+
+# Prefetch packets
+prefetch = true
+
+# ============================================================================
+# Integration Settings
+# ============================================================================
+[integration]
+# Enable external threat intelligence feeds
+threat_intel_enabled = false
+
+# Threat intel feed URLs (comma-separated)
+threat_intel_feeds =
+
+# Update interval (seconds)
+threat_intel_update_interval = 3600
+
+# Enable SIEM integration
+siem_enabled = false
+
+# SIEM type: splunk, elasticsearch, arcsight
+siem_type = elasticsearch
+
+# SIEM connection string
+siem_connection =

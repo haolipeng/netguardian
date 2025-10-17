@@ -1,0 +1,78 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+
+# Compiled binaries
+bin/
+lib/
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Generated files
+*.log
+*.pcap
+*.pcapng
+/include/core/version.h
+
+# Test outputs
+Testing/
+test_output/
+*.gcda
+*.gcno
+*.gcov
+
+# Profiling data
+*.prof
+gmon.out
+perf.data*
+callgrind.out.*
+
+# Package files
+*.deb
+*.rpm
+*.tar.gz
+*.zip
+
+# Dependencies
+third_party/*/
+!third_party/.gitkeep
+
+# Runtime data
+*.pid
+core
+core.*
+
+# Documentation build
+docs/_build/
+docs/html/
+docs/latex/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Backup files
+*.bak
+*.orig
