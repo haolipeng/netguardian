@@ -78,6 +78,7 @@ endif()
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/concurrentqueue
 )
 
 # Generate version header
@@ -123,6 +124,11 @@ target_link_libraries(netguardian
     PRIVATE
         netguardian_core
         netguardian_utils
+        netguardian_decoders
+        netguardian_flow
+        reassembly
+        netguardian_rules
+        alerts
         netguardian_bridge
         Threads::Threads
 )

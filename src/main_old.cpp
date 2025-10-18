@@ -2,8 +2,6 @@
 #include "core/packet.h"
 #include "core/packet_capture.h"
 #include "core/detection_engine.h"
-#include "core/processor_factory.h"
-#include "core/statistics_collector.h"
 #include <iostream>
 #include <cstdlib>
 #include <csignal>
@@ -20,7 +18,7 @@ using namespace netguardian::core;
 // ============================================================================
 
 std::atomic<bool> g_running(true);
-std::unique_ptr<DetectionEngine> g_engine;  // 改为 unique_ptr
+DetectionEngine* g_engine = nullptr;
 PacketCapture* g_capture = nullptr;
 
 // 统计报告间隔（秒）
@@ -87,17 +85,17 @@ void print_statistics_header() {
     print_separator();
 }
 
-void print_statistics(const DetectionEngineStatsSnapshot& stats) {
+void print_statistics(const DetectionEngineStats& stats, const flow::FlowTableStats& flow_stats) {
     // 数据包统计
-    std::cout << "Packets:        " << std::setw(12) << stats.total_packets;
+    std::cout << "Packets:        " << std::setw(12) << stats.total_packets.load();
     if (stats.total_packets > 0) {
-        double drop_rate = (double)stats.dropped_packets / stats.total_packets * 100;
+        double drop_rate = (double)stats.dropped_packets.load() / stats.total_packets.load() * 100;
         std::cout << "  (dropped: " << std::fixed << std::setprecision(2) << drop_rate << "%)";
     }
     std::cout << "\n";
 
     // 字节统计
-    uint64_t total_bytes = stats.total_bytes;
+    uint64_t total_bytes = stats.total_bytes.load();
     std::cout << "Bytes:          " << std::setw(12) << total_bytes;
     if (total_bytes >= 1024 * 1024 * 1024) {
         std::cout << "  (" << std::fixed << std::setprecision(2)
@@ -112,25 +110,25 @@ void print_statistics(const DetectionEngineStatsSnapshot& stats) {
     std::cout << "\n";
 
     // 流统计
-    std::cout << "Flows:          " << std::setw(12) << stats.active_flows
-              << " active / " << stats.total_flows << " total\n";
+    std::cout << "Flows:          " << std::setw(12) << flow_stats.active_flows
+              << " active / " << flow_stats.total_flows << " total\n";
 
     // 协议分布
     std::cout << "\nProtocol Distribution:\n";
-    std::cout << "  IPv4:         " << std::setw(12) << stats.ipv4_packets << "\n";
-    std::cout << "  IPv6:         " << std::setw(12) << stats.ipv6_packets << "\n";
-    std::cout << "  TCP:          " << std::setw(12) << stats.tcp_packets << "\n";
-    std::cout << "  UDP:          " << std::setw(12) << stats.udp_packets << "\n";
-    std::cout << "  HTTP:         " << std::setw(12) << stats.http_packets << "\n";
-    std::cout << "  DNS:          " << std::setw(12) << stats.dns_packets << "\n";
+    std::cout << "  IPv4:         " << std::setw(12) << stats.ipv4_packets.load() << "\n";
+    std::cout << "  IPv6:         " << std::setw(12) << stats.ipv6_packets.load() << "\n";
+    std::cout << "  TCP:          " << std::setw(12) << stats.tcp_packets.load() << "\n";
+    std::cout << "  UDP:          " << std::setw(12) << stats.udp_packets.load() << "\n";
+    std::cout << "  HTTP:         " << std::setw(12) << stats.http_packets.load() << "\n";
+    std::cout << "  DNS:          " << std::setw(12) << stats.dns_packets.load() << "\n";
 
     // 检测统计
     std::cout << "\nDetection Statistics:\n";
-    std::cout << "  Rules matched:" << std::setw(12) << stats.rules_matched << "\n";
-    std::cout << "  Anomalies:    " << std::setw(12) << stats.anomalies_detected << "\n";
-    std::cout << "  Alerts:       " << std::setw(12) << stats.total_alerts;
+    std::cout << "  Rules matched:" << std::setw(12) << stats.rules_matched.load() << "\n";
+    std::cout << "  Anomalies:    " << std::setw(12) << stats.anomalies_detected.load() << "\n";
+    std::cout << "  Alerts:       " << std::setw(12) << stats.total_alerts.load();
     if (stats.alerts_suppressed > 0) {
-        std::cout << "  (suppressed: " << stats.alerts_suppressed << ")";
+        std::cout << "  (suppressed: " << stats.alerts_suppressed.load() << ")";
     }
     std::cout << "\n";
 
@@ -154,7 +152,7 @@ void statistics_thread() {
         if (elapsed >= g_stats_interval) {
             if (g_engine) {
                 print_statistics_header();
-                print_statistics(g_engine->get_stats_snapshot());
+                print_statistics(g_engine->get_stats(), g_engine->get_flow_stats());
             }
             last_report_time = now;
         }
@@ -243,27 +241,29 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // 配置处理器工厂
-    ProcessorFactoryConfig factory_config;
-    factory_config.datalink_type = DLT_EN10MB;  // 默认以太网
-    factory_config.enable_flow_tracking = enable_flow;
-    factory_config.enable_http_parser = true;
-    factory_config.enable_dns_parser = true;
-    factory_config.enable_dns_anomaly_detection = enable_anomaly;
-    factory_config.enable_tcp_reassembly = enable_reassembly;
-    factory_config.enable_ip_reassembly = enable_reassembly;
+    // 配置检测引擎
+    DetectionEngineConfig config;
+    config.rules_path = rules_path;
+    config.alert_console_output = true;
+    config.alert_file_output = !alert_file.empty();
+    config.alert_output_path = alert_file;
+    config.alert_output_format = alerts::FileAlertOutput::FileFormat::JSON;
+    config.enable_tcp_reassembly = enable_reassembly;
+    config.enable_ip_reassembly = enable_reassembly;
+    config.enable_http_parser = true;
+    config.enable_dns_parser = true;
+    config.enable_dns_anomaly_detection = enable_anomaly;
 
-    // 使用工厂创建检测引擎（包含完整的处理器管道）
-    std::cout << "[INFO] Creating detection engine with Pipeline architecture...\n";
-    g_engine = ProcessorFactory::create_detection_engine(factory_config);
+    // 创建检测引擎
+    std::cout << "[INFO] Creating detection engine...\n";
+    DetectionEngine engine(config);
+    g_engine = &engine;
 
     // 初始化检测引擎
-    if (!g_engine->initialize()) {
+    if (!engine.initialize()) {
         std::cerr << "[ERROR] Failed to initialize detection engine\n";
         return EXIT_FAILURE;
     }
-
-    std::cout << "[INFO] Detection engine created with " << g_engine->processor_count() << " processors\n";
 
     // 配置数据包捕获
     CaptureConfig capture_config;
@@ -310,7 +310,7 @@ int main(int argc, char* argv[]) {
     std::cout << "[INFO] Press Ctrl+C to stop...\n\n";
 
     // 启动引擎
-    g_engine->start();
+    engine.start();
 
     // 启动统计线程
     std::thread stats_thread;
@@ -352,7 +352,7 @@ int main(int argc, char* argv[]) {
 
     // 停止引擎（导出流、刷新缓冲区）
     std::cout << "[INFO] Flushing detection engine...\n";
-    g_engine->stop();
+    engine.stop();
 
     // 等待统计线程结束
     g_running = false;
@@ -365,7 +365,7 @@ int main(int argc, char* argv[]) {
     std::cout << "╔════════════════════════════════════════════════════════╗\n";
     std::cout << "║              Final Statistics Report                   ║\n";
     std::cout << "╚════════════════════════════════════════════════════════╝\n";
-    print_statistics(g_engine->get_stats_snapshot());
+    print_statistics(engine.get_stats(), engine.get_flow_stats());
 
     std::cout << "[INFO] NetGuardian stopped.\n";
 

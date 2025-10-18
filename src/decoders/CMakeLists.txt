@@ -6,7 +6,11 @@ add_library(netguardian_decoders STATIC
     tcp_decoder.cpp
     udp_decoder.cpp
     http_decoder.cpp
+    http_parser.cpp
     dns_decoder.cpp
+    dns_parser.cpp
+    dns_anomaly_detector.cpp
+    dns_transaction.cpp
 )
 
 target_include_directories(netguardian_decoders

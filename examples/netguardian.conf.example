@@ -1,0 +1,111 @@
+# NetGuardian Configuration File Example
+# This is a reference configuration showing available options
+
+[capture]
+# Network interface to monitor (use -i on command line)
+interface = eth0
+
+# Or read from PCAP file (use -r on command line)
+# pcap_file = /path/to/capture.pcap
+
+# BPF filter expression (use -f on command line)
+# filter = "tcp port 80 or tcp port 443"
+
+# Snapshot length in bytes
+snaplen = 65535
+
+# Promiscuous mode
+promiscuous = true
+
+# Timeout in milliseconds
+timeout_ms = 1000
+
+[flow]
+# Maximum number of concurrent flows
+max_flows = 100000
+
+# Flow timeout settings (seconds)
+tcp_established_timeout = 3600
+tcp_closing_timeout = 120
+tcp_closed_timeout = 5
+tcp_unknown_timeout = 300
+udp_timeout = 30
+other_timeout = 30
+
+[reassembly]
+# Enable TCP stream reassembly
+enable_tcp_reassembly = true
+
+# Enable IP fragment reassembly
+enable_ip_reassembly = true
+
+# Maximum TCP segments per stream
+tcp_max_segments = 1024
+
+# IP reassembly timeout (seconds)
+ip_timeout = 60
+
+[parsers]
+# Enable HTTP protocol parser
+enable_http_parser = true
+
+# Enable DNS protocol parser
+enable_dns_parser = true
+
+[detection]
+# Rules directory path (use -R on command line)
+rules_path = /etc/netguardian/rules
+
+# Auto-reload rules when files change
+auto_reload_rules = false
+
+[anomaly]
+# Enable DNS anomaly detection
+enable_dns_anomaly_detection = true
+
+# DNS anomaly thresholds
+dns_max_queries_per_second = 100
+dns_max_nxdomain_rate = 0.5
+dns_max_query_length = 255
+dns_suspicious_tlds_check = true
+dns_dga_detection = true
+
+[alerts]
+# Enable console output
+alert_console_output = true
+
+# Console color mode: NONE, BASIC, EXTENDED
+console_color_mode = BASIC
+
+# Enable file output (use -A on command line)
+alert_file_output = false
+
+# Alert output file path
+# alert_output_path = /var/log/netguardian/alerts.json
+
+# Alert output format: TEXT, JSON, CSV
+alert_output_format = JSON
+
+# Enable syslog output
+alert_syslog_output = false
+syslog_facility = local0
+
+# Alert deduplication
+dedup_enabled = true
+dedup_time_window = 60
+dedup_max_alerts_per_rule = 10
+
+[statistics]
+# Statistics report interval in seconds (use -s on command line)
+# Set to 0 to disable periodic reports
+stats_interval = 60
+
+[logging]
+# Log level: DEBUG, INFO, WARN, ERROR
+log_level = INFO
+
+# Log output: stdout, file, syslog
+log_output = stdout
+
+# Log file path (if log_output = file)
+# log_file = /var/log/netguardian/netguardian.log

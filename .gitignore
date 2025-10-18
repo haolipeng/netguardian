@@ -1,78 +1,99 @@
-# Build directories
-build/
-build-*/
-cmake-build-*/
+# NetGuardian .gitignore
 
-# Compiled binaries
+# 构建目录
+build/
 bin/
 lib/
-*.a
-*.so
-*.dylib
-*.dll
-*.exe
+*.build/
 
-# CMake files
+# CMake
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 install_manifest.txt
 CTestTestfile.cmake
-_deps/
+compile_commands.json
 
-# IDE files
-.vscode/
-.idea/
+# 编译产物
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.exe
+*.out
+
+# 临时文件
+*~
 *.swp
 *.swo
-*~
+.*.swp
+.*.swo
+
+# IDE 文件
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
-# Generated files
-*.log
-*.pcap
+# 测试输出
+test_*.pcap
 *.pcapng
-/include/core/version.h
-
-# Test outputs
-Testing/
 test_output/
+coverage/
 *.gcda
 *.gcno
 *.gcov
 
-# Profiling data
-*.prof
-gmon.out
-perf.data*
-callgrind.out.*
-
-# Package files
-*.deb
-*.rpm
-*.tar.gz
-*.zip
-
-# Dependencies
-third_party/*/
-!third_party/.gitkeep
-
-# Runtime data
-*.pid
-core
-core.*
-
-# Documentation build
+# 文档构建
 docs/_build/
-docs/html/
-docs/latex/
+docs/.doctrees/
 
 # Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.egg-info/
 .pytest_cache/
 
-# Backup files
+# 本地配置
+local.conf
+*.local
+
+# 密钥和凭证
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# 数据文件
+*.dat
+*.db
+*.sqlite
+
+# 性能分析
+*.prof
+*.perf
+perf.data*
+callgrind.out.*
+massif.out.*
+
+# Valgrind
+vgcore.*
+*.valgrind
+
+# 包管理 - 但保留 concurrentqueue
+third_party/*/build/
+
+# 编辑器备份
 *.bak
+*.backup
+*.old
 *.orig

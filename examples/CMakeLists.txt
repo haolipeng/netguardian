@@ -126,6 +126,30 @@ target_link_libraries(example_ip_reassembly
         reassembly
 )
 
+# HTTP parser demo
+add_executable(example_http_parser
+    example_http_parser.cpp
+)
+
+target_link_libraries(example_http_parser
+    PRIVATE
+        netguardian_core
+        netguardian_utils
+        netguardian_decoders
+)
+
+# DNS parser demo
+add_executable(example_dns_parser
+    example_dns_parser.cpp
+)
+
+target_link_libraries(example_dns_parser
+    PRIVATE
+        netguardian_core
+        netguardian_utils
+        netguardian_decoders
+)
+
 # Snort integration example
 # TODO: Implement snort_detection.cpp
 # if(ENABLE_SNORT_INTEGRATION)
@@ -185,6 +209,8 @@ install(TARGETS
     example_tcp_reassembly
     example_alert_system
     example_ip_reassembly
+    example_http_parser
+    example_dns_parser
     RUNTIME DESTINATION ${CMAKE_INSTALL_DOCDIR}/examples
 )
 
