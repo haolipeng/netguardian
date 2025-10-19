@@ -5,7 +5,7 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
-#include <optional>
+#include "utils/optional.h"
 
 namespace netguardian {
 namespace rules {
@@ -159,7 +159,7 @@ public:
     void set_enabled(bool enabled) { enabled_ = enabled; }
 
     // 获取特定类型的选项
-    std::optional<RuleOption> get_option(RuleOptionType type) const;
+    utils::optional<RuleOption> get_option(RuleOptionType type) const;
     std::vector<RuleOption> get_options(RuleOptionType type) const;
 
     // 规则字符串表示

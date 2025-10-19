@@ -102,12 +102,12 @@ public:
                field_name == "question_count" || field_name == "answer_count";
     }
 
-    std::any get_field(const std::string& field_name) const override {
+    utils::any get_field(const std::string& field_name) const override {
         if (field_name == "transaction_id") return transaction_id;
         if (field_name == "is_query") return is_query;
         if (field_name == "question_count") return question_count;
         if (field_name == "answer_count") return answer_count;
-        return std::any();
+        return utils::any();
     }
 };
 

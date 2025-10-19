@@ -45,8 +45,8 @@ public:
         const auto& stack = ctx.packet().protocol_stack();
 
         // 只处理 TCP/UDP
-        if (stack.l4_type != core::ProtocolType::TCP &&
-            stack.l4_type != core::ProtocolType::UDP) {
+        if (stack.l4_type() != core::ProtocolType::TCP &&
+            stack.l4_type() != core::ProtocolType::UDP) {
             return core::ProcessResult::CONTINUE;
         }
 
@@ -64,7 +64,7 @@ public:
         }
 
         // 处理 TCP 状态
-        if (stack.l4_type == core::ProtocolType::TCP) {
+        if (stack.l4_type() == core::ProtocolType::TCP) {
             process_tcp_flow(ctx, flow_ptr, key);
         }
 
@@ -86,39 +86,18 @@ private:
         flow::FlowKey key;
         const auto& stack = packet.protocol_stack();
 
-        // 提取 IP 地址
-        if (stack.l3_type == core::ProtocolType::IPV4 &&
-            static_cast<size_t>(stack.l3_offset) + sizeof(decoders::IPv4Header) <= packet.length()) {
-
-            const auto* ip_hdr = reinterpret_cast<const decoders::IPv4Header*>(
-                packet.data() + stack.l3_offset
-            );
-
-            key.src_ip = ip_hdr->src_ip;
-            key.dst_ip = ip_hdr->dst_ip;
-            key.protocol = ip_hdr->protocol;
+        // Use cached fields from new ProtocolStack structure
+        // IPv4 address information
+        if (stack.l3_type() == core::ProtocolType::IPV4) {
+            key.src_ip = stack.l3.src_ip;
+            key.dst_ip = stack.l3.dst_ip;
+            key.protocol = stack.l3.protocol;
         }
 
-        // 提取端口
-        if (stack.l4_type == core::ProtocolType::TCP &&
-            static_cast<size_t>(stack.l4_offset) + sizeof(decoders::TcpHeader) <= packet.length()) {
-
-            const auto* tcp_hdr = reinterpret_cast<const decoders::TcpHeader*>(
-                packet.data() + stack.l4_offset
-            );
-
-            key.src_port = ntohs(tcp_hdr->src_port);
-            key.dst_port = ntohs(tcp_hdr->dst_port);
-
-        } else if (stack.l4_type == core::ProtocolType::UDP &&
-                   static_cast<size_t>(stack.l4_offset) + sizeof(decoders::UdpHeader) <= packet.length()) {
-
-            const auto* udp_hdr = reinterpret_cast<const decoders::UdpHeader*>(
-                packet.data() + stack.l4_offset
-            );
-
-            key.src_port = ntohs(udp_hdr->src_port);
-            key.dst_port = ntohs(udp_hdr->dst_port);
+        // Port information
+        if (stack.l4_type() == core::ProtocolType::TCP || stack.l4_type() == core::ProtocolType::UDP) {
+            key.src_port = stack.l4.src_port;
+            key.dst_port = stack.l4.dst_port;
         }
 
         return key;
@@ -132,12 +111,12 @@ private:
                           const flow::FlowKey& key) {
         const auto& stack = ctx.packet().protocol_stack();
 
-        if (static_cast<size_t>(stack.l4_offset) + sizeof(decoders::TcpHeader) > ctx.packet().length()) {
+        if (static_cast<size_t>(stack.l4_offset()) + sizeof(decoders::TcpHeader) > ctx.packet().length()) {
             return;
         }
 
         const auto* tcp_hdr = reinterpret_cast<const decoders::TcpHeader*>(
-            ctx.packet().data() + stack.l4_offset
+            ctx.packet().data() + stack.l4_offset()
         );
 
         // 提取 TCP 标志

@@ -74,13 +74,13 @@ public:
                field_name == "total_length";
     }
 
-    std::any get_field(const std::string& field_name) const override {
+    utils::any get_field(const std::string& field_name) const override {
         if (field_name == "src_ip") return src_ip.to_string();
         if (field_name == "dst_ip") return dst_ip.to_string();
         if (field_name == "protocol") return protocol;
         if (field_name == "ttl") return ttl;
         if (field_name == "total_length") return total_length;
-        return std::any();
+        return utils::any();
     }
 
     bool is_fragmented() const {

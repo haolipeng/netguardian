@@ -12,11 +12,11 @@ namespace netguardian {
 namespace core {
 
 /**
- * DetectionEngineStatsSnapshot - 统计信息快照（普通类型）
+ * PipelineStatsSnapshot - 管道统计信息快照（普通类型）
  *
  * 用于读取统计信息的快照
  */
-struct DetectionEngineStatsSnapshot {
+struct PipelineStatsSnapshot {
     // 数据包统计
     uint64_t total_packets;
     uint64_t total_bytes;
@@ -47,7 +47,7 @@ struct DetectionEngineStatsSnapshot {
     uint64_t total_alerts;
     uint64_t alerts_suppressed;
 
-    DetectionEngineStatsSnapshot()
+    PipelineStatsSnapshot()
         : total_packets(0), total_bytes(0), dropped_packets(0)
         , ethernet_packets(0), ipv4_packets(0), ipv6_packets(0)
         , tcp_packets(0), udp_packets(0), http_packets(0), dns_packets(0)
@@ -59,12 +59,12 @@ struct DetectionEngineStatsSnapshot {
 };
 
 /**
- * DetectionEngineStats - 统计信息结构（原子类型）
+ * PipelineStats - 管道统计信息结构（原子类型）
  *
  * 注意：使用 atomic 类型以支持多线程环境
  * 不可拷贝，但可以创建快照
  */
-struct DetectionEngineStats {
+struct PipelineStats {
     // 数据包统计
     std::atomic<uint64_t> total_packets{0};
     std::atomic<uint64_t> total_bytes{0};
@@ -117,8 +117,8 @@ struct DetectionEngineStats {
     }
 
     // 创建快照（用于读取统计信息）
-    DetectionEngineStatsSnapshot snapshot() const {
-        DetectionEngineStatsSnapshot copy;
+    PipelineStatsSnapshot snapshot() const {
+        PipelineStatsSnapshot copy;
         copy.total_packets = total_packets.load();
         copy.total_bytes = total_bytes.load();
         copy.dropped_packets = dropped_packets.load();
@@ -144,7 +144,7 @@ struct DetectionEngineStats {
 /**
  * StatisticsCollector - 统计收集器
  *
- * 负责收集各种统计信息，分离自 DetectionEngine。
+ * 负责收集各种统计信息，服务于 PacketPipeline。
  *
  * 设计原则：
  * - 线程安全：使用 atomic 类型
@@ -178,21 +178,21 @@ public:
 
     void record_protocols(const ProtocolStack& stack) {
         // L2
-        if (stack.l2_type == ProtocolType::ETHERNET) {
+        if (stack.l2_type() == ProtocolType::ETHERNET) {
             stats_.ethernet_packets++;
         }
 
         // L3
-        if (stack.l3_type == ProtocolType::IPV4) {
+        if (stack.l3_type() == ProtocolType::IPV4) {
             stats_.ipv4_packets++;
-        } else if (stack.l3_type == ProtocolType::IPV6) {
+        } else if (stack.l3_type() == ProtocolType::IPV6) {
             stats_.ipv6_packets++;
         }
 
         // L4
-        if (stack.l4_type == ProtocolType::TCP) {
+        if (stack.l4_type() == ProtocolType::TCP) {
             stats_.tcp_packets++;
-        } else if (stack.l4_type == ProtocolType::UDP) {
+        } else if (stack.l4_type() == ProtocolType::UDP) {
             stats_.udp_packets++;
         }
     }
@@ -227,6 +227,10 @@ public:
     // ========================================================================
     // 重组统计
     // ========================================================================
+
+    void record_tcp_segment() {
+        // TCP 段已添加到重组器（可选统计）
+    }
 
     void record_tcp_reassembly() {
         stats_.tcp_reassembled_streams++;
@@ -271,14 +275,14 @@ public:
     /**
      * 获取统计信息（返回引用，小心多线程访问）
      */
-    const DetectionEngineStats& stats() const {
+    const PipelineStats& stats() const {
         return stats_;
     }
 
     /**
      * 获取统计信息快照（线程安全）
      */
-    DetectionEngineStatsSnapshot snapshot() const {
+    PipelineStatsSnapshot snapshot() const {
         return stats_.snapshot();
     }
 
@@ -290,7 +294,7 @@ public:
     }
 
 private:
-    DetectionEngineStats stats_;
+    PipelineStats stats_;
 };
 
 } // namespace core

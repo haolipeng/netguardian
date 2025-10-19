@@ -101,7 +101,7 @@ private:
         // 编译 TCP 标志匹配器
         auto flags_option = rule_.get_option(rules::RuleOptionType::FLAGS);
         if (flags_option.has_value() && flags_option->has_value) {
-            tcp_flags_matcher_ = std::make_unique<TcpFlagsMatcher>(flags_option->value);
+            tcp_flags_matcher_ = std::unique_ptr<TcpFlagsMatcher>(new TcpFlagsMatcher(flags_option->value));
         }
     }
 
@@ -113,13 +113,13 @@ private:
         // 检查 L4 协议
         switch (header.protocol) {
             case rules::RuleProtocol::TCP:
-                return stack.l4_type == core::ProtocolType::TCP;
+                return stack.l4_type() == core::ProtocolType::TCP;
             case rules::RuleProtocol::UDP:
-                return stack.l4_type == core::ProtocolType::UDP;
+                return stack.l4_type() == core::ProtocolType::UDP;
             case rules::RuleProtocol::ICMP:
-                return stack.l4_type == core::ProtocolType::ICMP;
+                return stack.l4_type() == core::ProtocolType::ICMP;
             case rules::RuleProtocol::IP:
-                return stack.l3_type == core::ProtocolType::IPV4;
+                return stack.l3_type() == core::ProtocolType::IPV4;
             case rules::RuleProtocol::ANY:
                 return true;
             default:
@@ -127,65 +127,35 @@ private:
         }
     }
 
-    // 匹配网络层（IP 地址和端口）
+    // 匹配网络层（IP 地址和端口）- 使用缓存字段
     bool match_network(const core::Packet& packet) const {
         const auto& header = rule_.header();
         const auto& stack = packet.protocol_stack();
 
         // 检查是否有 IPv4 头部
-        if (stack.l3_type != core::ProtocolType::IPV4 ||
-            static_cast<size_t>(stack.l3_offset) + sizeof(decoders::IPv4Header) > packet.length()) {
+        if (stack.l3_type() != core::ProtocolType::IPV4) {
             return false;
         }
 
-        const decoders::IPv4Header* ip_hdr = reinterpret_cast<const decoders::IPv4Header*>(
-            packet.data() + stack.l3_offset
-        );
-
-        // 匹配源 IP
+        // 匹配源 IP - 使用缓存字段
         IpMatcher src_ip_matcher(header.src_ip);
-        if (!src_ip_matcher.match(ip_hdr->src_ip)) {
+        if (!src_ip_matcher.match(stack.l3.src_ip)) {
             return false;
         }
 
-        // 匹配目标 IP
+        // 匹配目标 IP - 使用缓存字段
         IpMatcher dst_ip_matcher(header.dst_ip);
-        if (!dst_ip_matcher.match(ip_hdr->dst_ip)) {
+        if (!dst_ip_matcher.match(stack.l3.dst_ip)) {
             return false;
         }
 
-        // 匹配端口（TCP/UDP）
-        if (stack.l4_type == core::ProtocolType::TCP) {
-            if (static_cast<size_t>(stack.l4_offset) + sizeof(decoders::TcpHeader) > packet.length()) {
-                return false;
-            }
-
-            const decoders::TcpHeader* tcp_hdr = reinterpret_cast<const decoders::TcpHeader*>(
-                packet.data() + stack.l4_offset
-            );
-
+        // 匹配端口（TCP/UDP）- 使用缓存字段
+        if (stack.l4_type() == core::ProtocolType::TCP || stack.l4_type() == core::ProtocolType::UDP) {
             PortMatcher src_port_matcher(header.src_port);
             PortMatcher dst_port_matcher(header.dst_port);
 
-            if (!src_port_matcher.match(ntohs(tcp_hdr->src_port)) ||
-                !dst_port_matcher.match(ntohs(tcp_hdr->dst_port))) {
-                return false;
-            }
-
-        } else if (stack.l4_type == core::ProtocolType::UDP) {
-            if (static_cast<size_t>(stack.l4_offset) + sizeof(decoders::UdpHeader) > packet.length()) {
-                return false;
-            }
-
-            const decoders::UdpHeader* udp_hdr = reinterpret_cast<const decoders::UdpHeader*>(
-                packet.data() + stack.l4_offset
-            );
-
-            PortMatcher src_port_matcher(header.src_port);
-            PortMatcher dst_port_matcher(header.dst_port);
-
-            if (!src_port_matcher.match(ntohs(udp_hdr->src_port)) ||
-                !dst_port_matcher.match(ntohs(udp_hdr->dst_port))) {
+            if (!src_port_matcher.match(stack.l4.src_port) ||
+                !dst_port_matcher.match(stack.l4.dst_port)) {
                 return false;
             }
         }
@@ -193,7 +163,7 @@ private:
         return true;
     }
 
-    // 匹配 TCP 标志
+    // 匹配 TCP 标志 - 使用缓存字段
     bool match_tcp_flags(const core::Packet& packet) const {
         if (!tcp_flags_matcher_) {
             return true;  // 没有 TCP 标志要求
@@ -201,19 +171,12 @@ private:
 
         const auto& stack = packet.protocol_stack();
 
-        if (stack.l4_type != core::ProtocolType::TCP) {
+        if (stack.l4_type() != core::ProtocolType::TCP) {
             return false;
         }
 
-        if (static_cast<size_t>(stack.l4_offset) + sizeof(decoders::TcpHeader) > packet.length()) {
-            return false;
-        }
-
-        const decoders::TcpHeader* tcp_hdr = reinterpret_cast<const decoders::TcpHeader*>(
-            packet.data() + stack.l4_offset
-        );
-
-        return tcp_flags_matcher_->match(tcp_hdr->flags);
+        // 使用缓存的 TCP flags 字段
+        return tcp_flags_matcher_->match(stack.l4.flags);
     }
 
     // 匹配内容
@@ -224,12 +187,12 @@ private:
 
         // 获取 payload（应用层数据）
         const auto& stack = packet.protocol_stack();
-        if (stack.l7_offset < 0 || static_cast<size_t>(stack.l7_offset) >= packet.length()) {
+        if (stack.l7.offset == 0 || static_cast<size_t>(stack.l7.offset) >= packet.length()) {
             return false;  // 没有应用层数据
         }
 
-        const uint8_t* payload = packet.data() + stack.l7_offset;
-        size_t payload_length = packet.length() - stack.l7_offset;
+        const uint8_t* payload = packet.data() + stack.l7.offset;
+        size_t payload_length = stack.l7.length;
 
         // 所有内容匹配器都必须匹配
         for (const auto& matcher : content_matchers_) {

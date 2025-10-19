@@ -1,0 +1,134 @@
+[  6%] Built target netguardian_utils
+[ 12%] Built target reassembly
+[ 23%] Built target netguardian_core
+Consolidate compiler generated dependencies of target example_protocol_identification
+[ 27%] Built target netguardian_bridge
+[ 29%] Built target example_basic_capture
+[ 30%] Built target example_ip_reassembly
+[ 31%] Building CXX object examples/CMakeFiles/example_protocol_identification.dir/protocol_identification_demo.cpp.o
+[ 35%] Built target netguardian_rules
+Consolidate compiler generated dependencies of target netguardian_decoders
+[ 36%] Building CXX object src/decoders/CMakeFiles/netguardian_decoders.dir/http_decoder.cpp.o
+[ 39%] Building CXX object src/decoders/CMakeFiles/netguardian_decoders.dir/dns_decoder.cpp.o
+[ 42%] Built target netguardian_snort
+[ 43%] Built target test_integration_basic
+[ 49%] Built target netguardian_zeek
+[ 51%] Built target example_rule_parser
+[ 53%] Built target test_flow
+[ 56%] Built target test_snort_integration
+[ 58%] Built target test_packet
+[ 62%] Built target test_utils
+[ 65%] Built target test_bridge
+[ 68%] Built target test_zeek_integration
+[ 70%] Built target test_integration_full
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp: In function ‘void print_protocol_info(const netguardian::core::Packet&, const netguardian::core::IdentificationResult&)’:
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:45:58: error: invalid use of non-static member function ‘netguardian::core::ProtocolType netguardian::core::ProtocolStack::l2_type() const’
+   45 |     std::cout << "L2: " << protocol_type_to_string(stack.l2_type);
+      |                                                    ~~~~~~^~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:249:18: note: declared here
+  249 |     ProtocolType l2_type() const { return l2.type; }
+      |                  ^~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:46:23: error: cannot convert ‘netguardian::core::ProtocolStack::has_vlan’ from type ‘bool (netguardian::core::ProtocolStack::)() const’ to type ‘bool’
+   46 |     if (stack.has_vlan) {
+      |                       ^
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:47:32: error: invalid use of non-static member function ‘uint16_t netguardian::core::ProtocolStack::vlan_id() const’
+   47 |         std::cout << " [VLAN " << stack.vlan_id << "]";
+      |         ~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:272:14: note: declared here
+  272 |     uint16_t vlan_id() const { return l2.vlan_id; }
+      |              ^~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:52:58: error: invalid use of non-static member function ‘netguardian::core::ProtocolType netguardian::core::ProtocolStack::l3_type() const’
+   52 |     std::cout << "L3: " << protocol_type_to_string(stack.l3_type) << "\n";
+      |                                                    ~~~~~~^~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:250:18: note: declared here
+  250 |     ProtocolType l3_type() const { return l3.type; }
+      |                  ^~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:55:23: error: invalid use of non-static member function ‘netguardian::core::ProtocolType netguardian::core::ProtocolStack::l4_type() const’
+   55 |     if (stack.l4_type != ProtocolType::UNKNOWN) {
+      |         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:251:18: note: declared here
+  251 |     ProtocolType l4_type() const { return l4.type; }
+      |                  ^~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:56:62: error: invalid use of non-static member function ‘netguardian::core::ProtocolType netguardian::core::ProtocolStack::l4_type() const’
+   56 |         std::cout << "L4: " << protocol_type_to_string(stack.l4_type);
+      |                                                        ~~~~~~^~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:251:18: note: declared here
+  251 |     ProtocolType l4_type() const { return l4.type; }
+      |                  ^~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:59:19: error: invalid use of member function ‘uint16_t netguardian::core::ProtocolStack::l4_offset() const’ (did you forget the ‘()’ ?)
+   59 |         if (stack.l4_offset > 0 && (stack.l4_type == ProtocolType::TCP || stack.l4_type == ProtocolType::UDP)) {
+      |             ~~~~~~^~~~~~~~~
+      |                            ()
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:59:51: error: invalid use of non-static member function ‘netguardian::core::ProtocolType netguardian::core::ProtocolStack::l4_type() const’
+   59 |         if (stack.l4_offset > 0 && (stack.l4_type == ProtocolType::TCP || stack.l4_type == ProtocolType::UDP)) {
+      |                                     ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:251:18: note: declared here
+  251 |     ProtocolType l4_type() const { return l4.type; }
+      |                  ^~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:59:89: error: invalid use of non-static member function ‘netguardian::core::ProtocolType netguardian::core::ProtocolStack::l4_type() const’
+   59 |         if (stack.l4_offset > 0 && (stack.l4_type == ProtocolType::TCP || stack.l4_type == ProtocolType::UDP)) {
+      |                                                                           ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:251:18: note: declared here
+  251 |     ProtocolType l4_type() const { return l4.type; }
+      |                  ^~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:60:60: error: invalid use of member function ‘uint16_t netguardian::core::ProtocolStack::l4_offset() const’ (did you forget the ‘()’ ?)
+   60 |             const uint8_t* l4_data = packet.data() + stack.l4_offset;
+      |                                                      ~~~~~~^~~~~~~~~
+      |                                                                     ()
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:82:15: error: invalid use of member function ‘uint16_t netguardian::core::ProtocolStack::payload_len() const’ (did you forget the ‘()’ ?)
+   82 |     if (stack.payload_len > 0) {
+      |         ~~~~~~^~~~~~~~~~~
+      |                          ()
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:83:34: error: invalid use of non-static member function ‘uint16_t netguardian::core::ProtocolStack::payload_len() const’
+   83 |         std::cout << "Payload: " << stack.payload_len << " bytes\n";
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:268:14: note: declared here
+  268 |     uint16_t payload_len() const { return l7.length; }
+      |              ^~~~~~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:87:42: error: invalid use of non-static member function ‘uint16_t netguardian::core::ProtocolStack::payload_len() const’
+   87 |         size_t show_len = std::min(stack.payload_len, (uint16_t)16);
+      |                                    ~~~~~~^~~~~~~~~~~
+In file included from /home/work/snort_zeek_combine/netguardian/include/core/packet.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/include/core/packet_capture.h:4,
+                 from /home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:10:
+/home/work/snort_zeek_combine/netguardian/include/core/protocol_types.h:268:14: note: declared here
+  268 |     uint16_t payload_len() const { return l7.length; }
+      |              ^~~~~~~~~~~
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:90:50: error: invalid use of member function ‘uint16_t netguardian::core::ProtocolStack::payload_offset() const’ (did you forget the ‘()’ ?)
+   90 |                      << (int)packet.data()[stack.payload_offset + i] << " ";
+      |                                            ~~~~~~^~~~~~~~~~~~~~
+      |                                                                ()
+/home/work/snort_zeek_combine/netguardian/examples/protocol_identification_demo.cpp:97:42: error: invalid use of member function ‘uint16_t netguardian::core::ProtocolStack::payload_offset() const’ (did you forget the ‘()’ ?)
+   97 |             char c = packet.data()[stack.payload_offset + i];
+      |                                    ~~~~~~^~~~~~~~~~~~~~
+      |                                                        ()
+gmake[2]: *** [examples/CMakeFiles/example_protocol_identification.dir/build.make:76: examples/CMakeFiles/example_protocol_identification.dir/protocol_identification_demo.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:908: examples/CMakeFiles/example_protocol_identification.dir/all] Error 2
+gmake[1]: *** Waiting for unfinished jobs....
+[ 71%] Linking CXX static library ../../lib/libnetguardian_decoders.a
+[ 78%] Built target netguardian_decoders
+gmake: *** [Makefile:146: all] Error 2

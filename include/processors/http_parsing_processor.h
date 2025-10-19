@@ -34,12 +34,12 @@ public:
         const auto& stack = ctx.packet().protocol_stack();
 
         // 只处理 TCP
-        if (stack.l4_type != core::ProtocolType::TCP) {
+        if (stack.l4_type() != core::ProtocolType::TCP) {
             return core::ProcessResult::CONTINUE;
         }
 
         // 检查是否有 payload
-        if (stack.payload_len == 0) {
+        if (stack.payload_len() == 0) {
             return core::ProcessResult::CONTINUE;
         }
 
@@ -48,8 +48,8 @@ public:
             return core::ProcessResult::CONTINUE;
         }
 
-        const uint8_t* payload = ctx.packet().data() + stack.payload_offset;
-        size_t payload_len = stack.payload_len;
+        const uint8_t* payload = ctx.packet().data() + stack.payload_offset();
+        size_t payload_len = stack.payload_len();
 
         // 尝试解析 HTTP 请求
         auto request = std::make_shared<decoders::HttpRequest>();
@@ -85,19 +85,14 @@ private:
                    key.dst_port == 80 || key.dst_port == 8080;
         }
 
-        // 否则从数据包中提取端口
+        // 否则从数据包中提取端口 - use cached fields
         const auto& stack = ctx.packet().protocol_stack();
-        if (stack.l4_type != core::ProtocolType::TCP ||
-            static_cast<size_t>(stack.l4_offset) + sizeof(decoders::TcpHeader) > ctx.packet().length()) {
+        if (stack.l4_type() != core::ProtocolType::TCP) {
             return false;
         }
 
-        const auto* tcp_hdr = reinterpret_cast<const decoders::TcpHeader*>(
-            ctx.packet().data() + stack.l4_offset
-        );
-
-        uint16_t src_port = ntohs(tcp_hdr->src_port);
-        uint16_t dst_port = ntohs(tcp_hdr->dst_port);
+        uint16_t src_port = stack.l4.src_port;
+        uint16_t dst_port = stack.l4.dst_port;
 
         return src_port == 80 || src_port == 8080 ||
                dst_port == 80 || dst_port == 8080;

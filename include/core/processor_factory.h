@@ -2,17 +2,26 @@
 #define NETGUARDIAN_CORE_PROCESSOR_FACTORY_H
 
 #include "core/packet_processor.h"
-#include "core/detection_engine.h"
+#include "core/packet_pipeline.h"
 #include "processors/protocol_parsing_processor.h"
 #include "processors/flow_tracking_processor.h"
+#include "processors/tcp_reassembly_processor.h"
+#include "processors/ip_reassembly_processor.h"
 #include "processors/http_parsing_processor.h"
 #include "processors/dns_parsing_processor.h"
 #include "processors/anomaly_detection_processor.h"
+#include "processors/rule_detection_processor.h"
 #include "flow/flow_table.h"
 #include "flow/flow_manager.h"
 #include "decoders/dns_anomaly_detector.h"
+#include "rules/rule_manager.h"
+#include "alerts/alert_manager.h"
+#include "alerts/alert_output.h"
+#include "utils/cxx11_compat.h"
 #include <memory>
 #include <vector>
+#include <string>
+#include <iostream>
 #include <pcap/pcap.h>
 
 namespace netguardian {
@@ -40,10 +49,18 @@ struct ProcessorFactoryConfig {
     bool enable_dns_anomaly_detection = true;
     decoders::DnsAnomalyConfig dns_anomaly_config;
 
-    // 规则检测（未来扩展）
+    // 规则检测
     bool enable_rule_detection = false;
+    std::string rules_path;  // 规则文件或目录路径
 
-    // 重组（未来扩展）
+    // 告警输出
+    bool enable_console_output = true;   // 控制台输出
+    bool enable_file_output = false;      // 文件输出
+    std::string alert_file_path;          // 告警文件路径
+    std::string alert_file_format;        // 文件格式：text/json/csv
+    bool enable_syslog_output = false;    // Syslog 输出
+
+    // 重组
     bool enable_tcp_reassembly = false;
     bool enable_ip_reassembly = false;
 
@@ -69,22 +86,22 @@ struct ProcessorFactoryConfig {
  * config.enable_http_parser = true;
  * config.enable_dns_parser = true;
  *
- * auto engine = ProcessorFactory::create_detection_engine(config);
- * engine->start();
+ * auto pipeline = ProcessorFactory::create_packet_pipeline(config);
+ * pipeline->start();
  * ```
  */
 class ProcessorFactory {
 public:
     /**
-     * 创建标准的检测引擎（包含完整的处理器管道）
+     * 创建标准的数据包处理管道（包含完整的处理器）
      *
      * @param config 处理器配置
-     * @return DetectionEngine 智能指针
+     * @return PacketPipeline 智能指针
      */
-    static std::unique_ptr<DetectionEngine> create_detection_engine(
+    static std::unique_ptr<PacketPipeline> create_packet_pipeline(
         const ProcessorFactoryConfig& config = ProcessorFactoryConfig())
     {
-        auto engine = std::make_unique<DetectionEngine>();
+        auto pipeline = std::unique_ptr<PacketPipeline>(new PacketPipeline());
 
         // 创建共享的流表（如果启用流跟踪）
         std::shared_ptr<flow::FlowTable> flow_table;
@@ -95,97 +112,157 @@ public:
         // 创建并添加处理器（按处理顺序）
 
         // 1. 协议解析（必需，放在最前面）
-        engine->add_processor(
-            std::make_unique<processors::ProtocolParsingProcessor>(config.datalink_type)
+        pipeline->add_processor(
+            std::unique_ptr<processors::ProtocolParsingProcessor>(new processors::ProtocolParsingProcessor(config.datalink_type))
         );
 
         // 2. 流跟踪（可选）
         if (config.enable_flow_tracking && flow_table) {
-            engine->add_processor(
-                std::make_unique<processors::FlowTrackingProcessor>(flow_table)
+            pipeline->add_processor(
+                std::unique_ptr<processors::FlowTrackingProcessor>(new processors::FlowTrackingProcessor(flow_table))
             );
         }
 
-        // 3. 重组（可选，未来实现）
-        // if (config.enable_tcp_reassembly) {
-        //     engine->add_processor(
-        //         std::make_unique<processors::TcpReassemblyProcessor>(...)
-        //     );
-        // }
-        // if (config.enable_ip_reassembly) {
-        //     engine->add_processor(
-        //         std::make_unique<processors::IpReassemblyProcessor>(...)
-        //     );
-        // }
+        // 3. IP 分片重组（可选，需在 TCP 重组之前）
+        if (config.enable_ip_reassembly) {
+            pipeline->add_processor(
+                std::unique_ptr<processors::IpReassemblyProcessor>(new processors::IpReassemblyProcessor())
+            );
+        }
 
-        // 4. HTTP 解析（可选）
+        // 4. TCP 流重组（可选，需要流跟踪支持）
+        if (config.enable_tcp_reassembly && config.enable_flow_tracking) {
+            pipeline->add_processor(
+                std::unique_ptr<processors::TcpReassemblyProcessor>(new processors::TcpReassemblyProcessor())
+            );
+        }
+
+        // 5. HTTP 解析（可选）
         if (config.enable_http_parser) {
-            engine->add_processor(
-                std::make_unique<processors::HttpParsingProcessor>()
+            pipeline->add_processor(
+                std::unique_ptr<processors::HttpParsingProcessor>(new processors::HttpParsingProcessor())
             );
         }
 
-        // 5. DNS 解析（可选）
+        // 6. DNS 解析（可选）
         if (config.enable_dns_parser) {
-            engine->add_processor(
-                std::make_unique<processors::DnsParsingProcessor>()
+            pipeline->add_processor(
+                std::unique_ptr<processors::DnsParsingProcessor>(new processors::DnsParsingProcessor())
             );
         }
 
-        // 6. 异常检测（可选）
+        // 7. 异常检测（可选）
         if (config.enable_dns_anomaly_detection) {
             auto dns_detector = std::make_shared<decoders::DnsAnomalyDetector>(
                 config.dns_anomaly_config
             );
-            engine->add_processor(
-                std::make_unique<processors::AnomalyDetectionProcessor>(dns_detector)
+            pipeline->add_processor(
+                std::unique_ptr<processors::AnomalyDetectionProcessor>(new processors::AnomalyDetectionProcessor(dns_detector))
             );
         }
 
-        // 7. 规则检测（可选，未来实现）
-        // if (config.enable_rule_detection) {
-        //     engine->add_processor(
-        //         std::make_unique<processors::RuleDetectionProcessor>(...)
-        //     );
-        // }
+        // 8. 规则检测（可选）
+        if (config.enable_rule_detection && !config.rules_path.empty()) {
+            // 创建规则管理器
+            auto rule_manager = std::make_shared<rules::RuleManager>();
+            if (!rule_manager->load_rules_file(config.rules_path)) {
+                // 加载失败时记录错误但继续
+                std::cerr << "[WARN] Failed to load rules from: " << config.rules_path << "\n";
+            }
 
-        return engine;
+            // 创建告警管理器
+            auto alert_manager = std::make_shared<alerts::AlertManager>();
+
+            // 添加控制台输出
+            if (config.enable_console_output) {
+                alert_manager->add_output(
+                    std::make_shared<alerts::ConsoleAlertOutput>()
+                );
+            }
+
+            // 添加文件输出
+            if (config.enable_file_output && !config.alert_file_path.empty()) {
+                try {
+                    alerts::FileAlertOutput::FileFormat format = alerts::FileAlertOutput::FileFormat::TEXT;
+
+                    // 根据配置或文件扩展名确定格式
+                    if (!config.alert_file_format.empty()) {
+                        if (config.alert_file_format == "json") {
+                            format = alerts::FileAlertOutput::FileFormat::JSON;
+                        } else if (config.alert_file_format == "csv") {
+                            format = alerts::FileAlertOutput::FileFormat::CSV;
+                        }
+                    } else {
+                        // 根据文件扩展名自动检测
+                        std::string path = config.alert_file_path;
+                        if (path.size() >= 5 && path.substr(path.size() - 5) == ".json") {
+                            format = alerts::FileAlertOutput::FileFormat::JSON;
+                        } else if (path.size() >= 4 && path.substr(path.size() - 4) == ".csv") {
+                            format = alerts::FileAlertOutput::FileFormat::CSV;
+                        }
+                    }
+
+                    alert_manager->add_output(
+                        std::make_shared<alerts::FileAlertOutput>(config.alert_file_path, format)
+                    );
+                } catch (const std::exception& e) {
+                    std::cerr << "[WARN] Failed to create file alert output: " << e.what() << "\n";
+                }
+            }
+
+            // 添加 Syslog 输出
+            if (config.enable_syslog_output) {
+                alert_manager->add_output(
+                    std::make_shared<alerts::SyslogAlertOutput>()
+                );
+            }
+
+            // 创建规则检测处理器
+            pipeline->add_processor(
+                std::make_unique<processors::RuleDetectionProcessor>(
+                    rule_manager,
+                    alert_manager
+                )
+            );
+        }
+
+        return pipeline;
     }
 
     /**
      * 创建自定义的处理器管道
      *
      * @param processors 处理器列表（按顺序）
-     * @return DetectionEngine 智能指针
+     * @return PacketPipeline 智能指针
      */
-    static std::unique_ptr<DetectionEngine> create_custom_engine(
+    static std::unique_ptr<PacketPipeline> create_custom_pipeline(
         std::vector<PacketProcessorPtr> processors)
     {
-        auto engine = std::make_unique<DetectionEngine>();
+        auto pipeline = std::unique_ptr<PacketPipeline>(new PacketPipeline());
 
         for (auto& processor : processors) {
-            engine->add_processor(std::move(processor));
+            pipeline->add_processor(std::move(processor));
         }
 
-        return engine;
+        return pipeline;
     }
 
     /**
-     * 创建最小化的引擎（仅协议解析）
+     * 创建最小化的管道（仅协议解析）
      *
      * @param datalink_type Datalink 类型
-     * @return DetectionEngine 智能指针
+     * @return PacketPipeline 智能指针
      */
-    static std::unique_ptr<DetectionEngine> create_minimal_engine(
+    static std::unique_ptr<PacketPipeline> create_minimal_pipeline(
         int datalink_type = DLT_EN10MB)
     {
-        auto engine = std::make_unique<DetectionEngine>();
+        auto pipeline = std::unique_ptr<PacketPipeline>(new PacketPipeline());
 
-        engine->add_processor(
-            std::make_unique<processors::ProtocolParsingProcessor>(datalink_type)
+        pipeline->add_processor(
+            std::unique_ptr<processors::ProtocolParsingProcessor>(new processors::ProtocolParsingProcessor(datalink_type))
         );
 
-        return engine;
+        return pipeline;
     }
 };
 

@@ -34,6 +34,18 @@ struct TcpFlags {
         return flags;
     }
 
+    // 从原始标志位字节提取标志位
+    static TcpFlags from_raw(uint8_t raw_flags) {
+        TcpFlags flags;
+        flags.syn = (raw_flags & TCP_FLAG_SYN) != 0;
+        flags.ack = (raw_flags & TCP_FLAG_ACK) != 0;
+        flags.fin = (raw_flags & TCP_FLAG_FIN) != 0;
+        flags.rst = (raw_flags & TCP_FLAG_RST) != 0;
+        flags.psh = (raw_flags & TCP_FLAG_PSH) != 0;
+        flags.urg = (raw_flags & TCP_FLAG_URG) != 0;
+        return flags;
+    }
+
     // 判断数据包类型
     bool is_syn() const { return syn && !ack; }
     bool is_syn_ack() const { return syn && ack; }

@@ -6,7 +6,7 @@
 #include "decoders/http_parser.h"
 #include "decoders/dns_parser.h"
 #include <memory>
-#include <any>
+#include "utils/any.h"
 #include <unordered_map>
 #include <string>
 
@@ -24,7 +24,7 @@ class StatisticsCollector;
  * 2. 解析后的信息（流、HTTP/DNS 消息等）
  * 3. 处理状态（是否应该丢弃等）
  * 4. 统计收集器引用
- * 5. 自定义数据（使用 std::any 存储）
+ * 5. 自定义数据（使用 utils::any 存储）
  *
  * 设计目标：
  * - 避免重复解析：每个处理器的解析结果可供后续处理器使用
@@ -196,9 +196,9 @@ public:
      * 设置自定义数据
      *
      * @param key 键名
-     * @param value 值（使用 std::any 存储任意类型）
+     * @param value 值（使用 utils::any 存储任意类型）
      */
-    void set_custom_data(const std::string& key, std::any value) {
+    void set_custom_data(const std::string& key, utils::any value) {
         custom_data_[key] = std::move(value);
     }
 
@@ -206,9 +206,9 @@ public:
      * 获取自定义数据
      *
      * @param key 键名
-     * @return std::any* 如果存在返回指针，否则返回 nullptr
+     * @return utils::any* 如果存在返回指针，否则返回 nullptr
      */
-    std::any* get_custom_data(const std::string& key) {
+    utils::any* get_custom_data(const std::string& key) {
         auto it = custom_data_.find(key);
         if (it != custom_data_.end()) {
             return &it->second;
@@ -242,7 +242,7 @@ private:
     bool should_drop_;
 
     // 自定义数据（用于扩展）
-    std::unordered_map<std::string, std::any> custom_data_;
+    std::unordered_map<std::string, utils::any> custom_data_;
 };
 
 } // namespace core

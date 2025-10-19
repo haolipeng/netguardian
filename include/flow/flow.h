@@ -81,9 +81,9 @@ public:
     {
         // 如果是 TCP 流，创建状态机和重组器
         if (key.protocol == 6) {  // TCP
-            tcp_state_machine_ = std::make_unique<TcpStateMachine>();
-            client_reassembler_ = std::make_unique<reassembly::TcpReassembler>();
-            server_reassembler_ = std::make_unique<reassembly::TcpReassembler>();
+            tcp_state_machine_ = std::unique_ptr<TcpStateMachine>(new TcpStateMachine());
+            client_reassembler_ = std::unique_ptr<reassembly::TcpReassembler>(new reassembly::TcpReassembler());
+            server_reassembler_ = std::unique_ptr<reassembly::TcpReassembler>(new reassembly::TcpReassembler());
         }
     }
 

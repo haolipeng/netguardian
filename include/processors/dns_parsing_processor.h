@@ -34,12 +34,12 @@ public:
         const auto& stack = ctx.packet().protocol_stack();
 
         // 只处理 UDP（DNS 主要使用 UDP）
-        if (stack.l4_type != core::ProtocolType::UDP) {
+        if (stack.l4_type() != core::ProtocolType::UDP) {
             return core::ProcessResult::CONTINUE;
         }
 
         // 检查是否有 payload
-        if (stack.payload_len == 0) {
+        if (stack.payload_len() == 0) {
             return core::ProcessResult::CONTINUE;
         }
 
@@ -48,8 +48,8 @@ public:
             return core::ProcessResult::CONTINUE;
         }
 
-        const uint8_t* payload = ctx.packet().data() + stack.payload_offset;
-        size_t payload_len = stack.payload_len;
+        const uint8_t* payload = ctx.packet().data() + stack.payload_offset();
+        size_t payload_len = stack.payload_len();
 
         // 尝试解析 DNS 消息
         auto message = std::make_shared<decoders::DnsMessage>();
@@ -74,19 +74,14 @@ private:
             return key.src_port == 53 || key.dst_port == 53;
         }
 
-        // 否则从数据包中提取端口
+        // 否则从数据包中提取端口 - 使用缓存字段
         const auto& stack = ctx.packet().protocol_stack();
-        if (stack.l4_type != core::ProtocolType::UDP ||
-            static_cast<size_t>(stack.l4_offset) + sizeof(decoders::UdpHeader) > ctx.packet().length()) {
+        if (stack.l4_type() != core::ProtocolType::UDP) {
             return false;
         }
 
-        const auto* udp_hdr = reinterpret_cast<const decoders::UdpHeader*>(
-            ctx.packet().data() + stack.l4_offset
-        );
-
-        uint16_t src_port = ntohs(udp_hdr->src_port);
-        uint16_t dst_port = ntohs(udp_hdr->dst_port);
+        uint16_t src_port = stack.l4.src_port;
+        uint16_t dst_port = stack.l4.dst_port;
 
         return src_port == 53 || dst_port == 53;
     }

@@ -6,7 +6,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <any>
+#include "utils/any.h"
 
 namespace netguardian {
 namespace decoders {
@@ -19,7 +19,7 @@ public:
 
     // 通用字段访问接口
     virtual bool has_field(const std::string& field_name) const = 0;
-    virtual std::any get_field(const std::string& field_name) const = 0;
+    virtual utils::any get_field(const std::string& field_name) const = 0;
 };
 
 // 解码器基类

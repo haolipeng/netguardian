@@ -48,12 +48,12 @@ public:
                field_name == "ethertype" || field_name == "vlan_id";
     }
 
-    std::any get_field(const std::string& field_name) const override {
+    utils::any get_field(const std::string& field_name) const override {
         if (field_name == "src_mac") return src_mac;
         if (field_name == "dst_mac") return dst_mac;
         if (field_name == "ethertype") return ethertype;
         if (field_name == "vlan_id") return vlan_id;
-        return std::any();
+        return utils::any();
     }
 
     static std::string mac_to_string(const MacAddress& mac) {
